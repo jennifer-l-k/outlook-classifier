@@ -259,8 +259,7 @@ function forceClassificationSubject(event) {
 
             getAttachmentClassification(function (res) {
 
-                console.log(res);
-                if (res.classification != curClassification.name) {
+                if ((res.classification != undefined) && (res.classification != curClassification.name)) {
                     mailboxItem.notificationMessages.addAsync('NoSend', {
                         type: 'errorMessage',
                         message: 'Message classified ' + curClassification.name + ' with ' + res.classification + ' attachment'

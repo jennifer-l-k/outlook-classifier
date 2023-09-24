@@ -10,7 +10,7 @@ let mailboxItem;
 let mailbox;
 const g = getGlobal();
 
-Office.onReady(function(info) {
+Office.onReady(function (info) {
     // If needed, Office.js is ready to be called
     mailboxItem = Office.context.mailbox.item;
     mailbox = Office.context.mailbox;
@@ -27,10 +27,10 @@ function getGlobal() {
     return typeof self !== "undefined" ?
         self :
         typeof window !== "undefined" ?
-        window :
-        typeof global !== "undefined" ?
-        global :
-        undefined;
+            window :
+            typeof global !== "undefined" ?
+                global :
+                undefined;
 }
 
 // The add-in command functions need to be available in global scope
@@ -38,25 +38,25 @@ g.validateBody = validateBody;
 
 let classifications = {
     "white": {
-        "name": "TLP White",
+        "name": "TLP:WHITE",
         "globalFunction": "actionMarkWhite",
         "subject": "[Classified White ⚪]",
         "icon80": "Icon.80x80"
     },
     "green": {
-        "name": "TLP Green",
+        "name": "TLP:GREEN",
         "globalFunction": "actionMarkGreen",
         "subject": "[Classified Green 🟢]",
         "icon80": "IconGreen.80x80"
     },
     "amber": {
-        "name": "TLP Amber",
+        "name": "TLP:AMBER",
         "globalFunction": "actionMarkAmber",
         "subject": "[Classified Amber 🟠]",
         "icon80": "IconOrange.80x80"
     },
     "red": {
-        "name": "TLP Red",
+        "name": "TLP:RED",
         "globalFunction": "actionMarkRed",
         "subject": "[Classified Red 🔴]",
         "icon80": "IconRed.80x80"
@@ -101,7 +101,7 @@ function normalizeClassification(subject) {
 
 function actionMarkFactory(classification) {
 
-    return function(event) {
+    return function (event) {
 
         let successMessage = {
             type: Office.MailboxEnums.ItemNotificationMessageType.InformationalMessage,
@@ -115,7 +115,7 @@ function actionMarkFactory(classification) {
             message: "Failed to mark message (requested " + classification.name + ")",
         };
 
-        setSubjectPrefix(classification, function(ret) {
+        setSubjectPrefix(classification, function (ret) {
 
             if (ret) {
                 // Show a notification message
@@ -139,7 +139,7 @@ function actionMarkFactory(classification) {
 function setSubjectPrefix(requestedClassification, callback) {
 
     // Check conversation history
-    findConversationSubjects(mailboxItem.conversationId, function(values) {
+    findConversationSubjects(mailboxItem.conversationId, function (values) {
 
         let classifiedConversation = false;
         let classificationConversation = "";
@@ -155,7 +155,7 @@ function setSubjectPrefix(requestedClassification, callback) {
 
         // Check current subject
         mailboxItem.subject.getAsync(
-            function(asyncResult) {
+            function (asyncResult) {
                 if (asyncResult.status == Office.AsyncResultStatus.Failed) {
                     console.log(asyncResult.error.message);
                     callback(false);
@@ -197,7 +197,7 @@ function setSubjectPrefix(requestedClassification, callback) {
 
                     mailboxItem.subject.setAsync(
                         subject, null,
-                        function(asyncResult) {
+                        function (asyncResult) {
                             if (asyncResult.status == Office.AsyncResultStatus.Failed) {
                                 console.log(asyncResult.error.message);
                                 callback(false);
@@ -220,7 +220,7 @@ function setSubjectPrefix(requestedClassification, callback) {
 
 
 
-    }, function(error) {
+    }, function (error) {
 
         callback(false);
 
@@ -239,9 +239,9 @@ function validateBody(event) {
 // <param name="event">MessageSend event passed from the calling function.</param>
 function forceClassificationSubject(event) {
     mailboxItem.subject.getAsync({
-            asyncContext: event
-        },
-        function(asyncResult) {
+        asyncContext: event
+    },
+        function (asyncResult) {
 
             let subject = asyncResult.value;
             let curClassification = getClassification(subject);
@@ -256,30 +256,49 @@ function forceClassificationSubject(event) {
                 });
                 return;
             }
-            
-            // Got valid classification, force normalization and category
-            Office.context.mailbox.item.saveAsync(
-			function callback(result) {
-				let itemId = result.value;
-				setCategory(itemId, curClassification.name, asyncResult.asyncContext, function(context) {
-					subject = normalizeClassification(subject);
-					subjectOnSendChange(subject, context);
-				});
-			});
-			
-				
-			// Process the result.
-			});
-            
+
+            getAttachmentClassification(function (res) {
+
+                console.log(res);
+                if (res.classification != curClassification.name) {
+                    mailboxItem.notificationMessages.addAsync('NoSend', {
+                        type: 'errorMessage',
+                        message: 'Message classified ' + curClassification.name + ' with ' + res.classification + ' attachment'
+                    });
+                    asyncResult.asyncContext.completed({
+                        allowEvent: false
+                    });
+                    return;
+                }
+
+                // Got valid classification, force normalization and category
+                // TODO move saveAsync calls to helper functions
+                Office.context.mailbox.item.saveAsync(
+                    function callback(result) {
+                        let itemId = result.value;
+                        setCategory(itemId, curClassification.name, asyncResult.asyncContext, function (context) {
+                            subject = normalizeClassification(subject);
+                            subjectOnSendChange(subject, context);
+                        });
+                    });
+
+            });
+
+
+
+
+            // Process the result.
+        });
+
 }
 
 
 function subjectOnSendChange(subject, event) {
     mailboxItem.subject.setAsync(
         subject, {
-            asyncContext: event
-        },
-        function(asyncResult) {
+        asyncContext: event
+    },
+        function (asyncResult) {
             if (asyncResult.status == Office.AsyncResultStatus.Failed) {
                 mailboxItem.notificationMessages.addAsync('NoSend', {
                     type: 'errorMessage',
@@ -305,7 +324,7 @@ function subjectOnSendChange(subject, event) {
 
 function asyncEws(soap, successCallback, errorCallback) {
 
-    mailbox.makeEwsRequestAsync(soap, function(ewsResult) {
+    mailbox.makeEwsRequestAsync(soap, function (ewsResult) {
         if (ewsResult.status === Office.AsyncResultStatus.Succeeded) {
             console.log("makeEwsRequestAsync success. " + ewsResult.status);
             let parser = new DOMParser();
@@ -371,7 +390,7 @@ function findConversationSubjects(conversationId, successCallback, errorCallback
         '       </m:GetConversationItems>';
     soap = getSoapHeader(soap);
     // Make EWS call
-    asyncEws(soap, function(xmlDoc) {
+    asyncEws(soap, function (xmlDoc) {
         let nodes = getNodes(xmlDoc, "t:Subject");
         let msgs = [];
         for (let msg of nodes) {
@@ -379,24 +398,24 @@ function findConversationSubjects(conversationId, successCallback, errorCallback
         }
         successCallback(msgs);
 
-    }, function(errorDetails) {
+    }, function (errorDetails) {
         if (errorCallback != null)
             errorCallback(errorDetails);
     });
 };
 
 function setCategory(itemId, category, context, callback) {
-	// ignore missing item ID to improve UX
-	if (!itemId) {
-		console.log("Ignoring invalid itemId in setCategory: "+itemId)
-		callback(context);
-		return;
-	}
-	
-	let soapUpdate = `<UpdateItem MessageDisposition="SaveOnly" ConflictResolution="AlwaysOverwrite" xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
+    // ignore missing item ID to improve UX
+    if (!itemId) {
+        console.log("Ignoring invalid itemId in setCategory: " + itemId)
+        callback(context);
+        return;
+    }
+
+    let soapUpdate = `<UpdateItem MessageDisposition="SaveOnly" ConflictResolution="AlwaysOverwrite" xmlns="http://schemas.microsoft.com/exchange/services/2006/messages">
 			<ItemChanges>
 				<t:ItemChange>
-					<t:ItemId Id="`+itemId+`"/>
+					<t:ItemId Id="`+ itemId + `"/>
 					<t:Updates>
 						<t:SetItemField>
 							<t:ExtendedFieldURI PropertySetId="00020329-0000-0000-C000-000000000046" PropertyName="Keywords" PropertyType="StringArray" />
@@ -404,7 +423,7 @@ function setCategory(itemId, category, context, callback) {
 								<t:ExtendedProperty>
 									<t:ExtendedFieldURI PropertySetId="00020329-0000-0000-C000-000000000046" PropertyName="Keywords" PropertyType="StringArray" />
 									<t:Values>
-										<t:Value>`+category+`</t:Value>
+										<t:Value>`+ category + `</t:Value>
 									</t:Values>
 								</t:ExtendedProperty>
 							</t:Message>
@@ -413,16 +432,101 @@ function setCategory(itemId, category, context, callback) {
 				</t:ItemChange>
 			</ItemChanges>
 		</UpdateItem>`;
-    
-  let soap = getSoapHeader(soapUpdate);
- 
-  asyncEws(soap, function(xmlDoc) {
-       console.log("Successfully set category: " + xmlDoc);
-       callback(context);
 
-    }, function(errorDetails) {
-      console.log("Error setting category: " + errorDetails);
-      callback(context);
-  });    
-     
+    let soap = getSoapHeader(soapUpdate);
+
+    asyncEws(soap, function (xmlDoc) {
+        console.log("Successfully set category: " + xmlDoc);
+        callback(context);
+
+    }, function (errorDetails) {
+        console.log("Error setting category: " + errorDetails);
+        callback(context);
+    });
+
 }
+
+function getAttachmentClassification(callback) {
+
+    Office.context.mailbox.item.saveAsync(
+        function (result) {
+            let itemId = result.value;
+
+            getAttachmentIDs(itemId, function (ids) {
+
+                if (ids.length == 0) {
+                    callback("");
+                    return;
+                }
+
+                Office.context.mailbox.getCallbackTokenAsync(function (asyncResult) {
+
+                    if (asyncResult.status != Office.AsyncResultStatus.Succeeded) {
+                        return;
+                    }
+
+                    let token = asyncResult.value;
+
+                    let serviceRequest = {
+                        token: token,
+                        ews_url: Office.context.mailbox.ewsUrl,
+                        attachment_ids: ids
+                    };
+
+                    let body = JSON.stringify(serviceRequest);
+
+                    // fetch was not working in Edge (zero byte body)
+                    var xmlhttp = new XMLHttpRequest(); 
+                    xmlhttp.open("POST", "https://localhost:4430/api/attachment");
+                    xmlhttp.setRequestHeader("Content-Type", "application/json;charset=UTF-8");
+                    xmlhttp.onreadystatechange = () => {
+                        if (xmlhttp.readyState === 4) {
+                            callback(JSON.parse(xmlhttp.response));
+                        }
+                    };
+                    xmlhttp.send(body);
+
+                });
+
+
+            }, function (error) {
+                console.log(error);
+            })
+
+
+        });
+
+
+
+}
+
+
+function getAttachmentIDs(messageID, successCallback, errorCallback) {
+    let soap = `<m:GetItem>
+    <m:ItemShape>
+      <t:BaseShape>IdOnly</t:BaseShape>
+      <t:AdditionalProperties>
+        <t:FieldURI FieldURI="item:Attachments" />
+      </t:AdditionalProperties>
+    </m:ItemShape>
+    <m:ItemIds>
+      <t:ItemId Id="`+ messageID + `" />
+    </m:ItemIds>
+  </m:GetItem>`;
+
+    soap = getSoapHeader(soap);
+    // Make EWS call
+    asyncEws(soap, function (xmlDoc) {
+        let nodes = getNodes(xmlDoc, "t:AttachmentId");
+        let msgs = [];
+        for (let msg of nodes) {
+            console.log(msg.attributes);
+            msgs.push(msg.attributes["Id"].value);
+        }
+        successCallback(msgs);
+
+    }, function (errorDetails) {
+        if (errorCallback != null)
+            errorCallback(errorDetails);
+    });
+};

@@ -11,25 +11,25 @@ $ewsService = New-Object Microsoft.Exchange.WebServices.Data.ExchangeService([Mi
 $autodiscoverUrl = "zaremba@concept.lab"
 
 $categoriesToEnforce = @{
-    "TLP White" = [PSCustomObject]@{
+    "TLP:WHITE" = [PSCustomObject]@{
         Subject       = "[Classified White ⚪]"
         Color         = "-1"
         FoundCategory = $false
         FoundRule     = $false
     }
-    "TLP Green" = [PSCustomObject]@{
+    "TLP:GREEN" = [PSCustomObject]@{
         Subject       = "[Classified Green 🟢]"
         Color         = "4"
         FoundCategory = $false
         FoundRule     = $false
     }
-    "TLP Amber" = [PSCustomObject]@{
+    "TLP:AMBER" = [PSCustomObject]@{
         Subject       = "[Classified Amber 🟠]"
         Color         = "1"
         FoundCategory = $false
         FoundRule     = $false
     }
-    "TLP Red"   = [PSCustomObject]@{
+    "TLP:RED"   = [PSCustomObject]@{
         Subject       = "[Classified Red 🔴]"
         Color         = "0"
         FoundCategory = $false
